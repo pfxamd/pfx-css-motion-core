@@ -10,6 +10,7 @@ export function createPlayback(duration, { rate = 1, loop = false } = {}) {
   function update(now) {
     if (!Number.isFinite(now)) throw new TypeError("now must be finite");
     if (status === "running") {
+      if (now < anchor) throw new RangeError("Clock must advance monotonically");
       const next = normalize(time + (now - anchor) * rate);
       time = next;
       anchor = now;
