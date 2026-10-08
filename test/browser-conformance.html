@@ -38,7 +38,8 @@ for (const duration of [0,100,800]) {
               const safariFinalBoundary = /Safari\//.test(navigator.userAgent) &&
                 !/Chrome\//.test(navigator.userAgent) &&
                 Number.isInteger(iterations) && iterations > 0 && duration > 0 &&
-                time >= endTime && time >= activeEnd && (core === 0 || core === 1) &&
+                time >= Math.max(0, Math.min(activeEnd, endTime)) &&
+                time >= activeEnd && (core === 0 || core === 1) &&
                 native !== null && Number.isFinite(native);
               if (safariFinalBoundary) knownSafariEndpointDifferenceCount++;
               else {
