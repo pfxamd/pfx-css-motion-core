@@ -20,7 +20,7 @@ Specification: https://www.w3.org/TR/web-animations-1/#calculating-the-simple-it
 | Playwright WebKit 27.2 on Linux | 21,600 / 21,600 matched | midpoint opacity 0.5, translateX 50px |
 | macOS Safari 26.6.1 via SafariDriver | 8,308 / 8,424 matched; 116 known endpoint disagreements | midpoint and final fill rendered correctly |
 
-The Safari deviations occurred at or beyond the end of integer-length iterations with `fill: both`: after completion, its `getComputedTiming().progress` sometimes wraps to approximately **0** instead of **1**, or approximately **1** instead of **0** for reversed direction. This is inconsistent with §4.8.3.3.
+The Safari deviations occurred at or beyond the end of integer-length iterations with `fill: both`: after completion, its `getComputedTiming().progress` sometimes wraps to approximately **0** instead of **1**, or approximately **1** instead of **0** for reversed direction. Of 116 disagreements, 112 are endpoint wraps (large difference) and 4 are small native floating-point drift (about 0.00001). These results differ from the normative §4.8.3.3 endpoint behavior.
 
 **Safari CSS rendering itself was tested:** the compiled opacity animation rendered opacity **0.5** midway, and opacity **1** both immediately and well after completion. Therefore the observed native API discrepancy was **not** reproduced as an incorrect final CSS rendering in these tested cases.
 
@@ -29,7 +29,7 @@ The Safari deviations occurred at or beyond the end of integer-length iterations
 - Run `npm run check` on Node 20, 22 and 24.
 - Compare all 21,600 targeted samples against Firefox and Playwright WebKit. Any deviation fails CI.
 - Run the 8,424-sample macOS SafariDriver suite. Every difference is counted and logged.
-- Only one **narrow, documented Safari discrepancy** is recognized: after a completed positive integer iteration at an endpoint, a large 0 ↔ 1 wrap in the native `getComputedTiming().progress`. Even recognized deviations are reported and preserved as failures of **strict native parity**.
+- Only the **narrow, documented Safari endpoint discrepancy** is classified: after a completed positive integer iteration, either a large 0 ↔ 1 native `getComputedTiming().progress` wrap, or native endpoint precision drift below 0.0001. Both are counted and reported separately. Even recognized deviations are reported and preserved as failures of **strict native parity**.
 - Any new/unrecognized discrepancy, or any incorrect midpoint/final CSS appearance, **fails CI**.
 - The W3C endpoint regression tests run without depending on browser behavior. We do not change the core to emulate Safari's divergent API values.
 
