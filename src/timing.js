@@ -16,10 +16,10 @@ export function sampleTiming(timing, localTime) {
   const phase = localTime < beforeBoundary ? "before" : localTime < afterBoundary ? "active" : "after";
   const fills = phase === "before" ? fill === "backwards" || fill === "both" : phase === "after" ? fill === "forwards" || fill === "both" : true;
   if (!fills) return { phase, progress: null, currentIteration: null, activeDuration, endTime };
-  const activeTime = phase === "before" ? 0 : phase === "after"
-    ? Math.max(0, Math.min(afterBoundary - delay, activeDuration))
+  const activeTime = phase === "before" ? 0
     : Math.max(0, Math.min(localTime - delay, activeDuration));
-  const overall = duration === 0 ? iterations : activeTime / duration;
+  const overall = duration === 0 ? (phase === "before" ? 0 : iterations)
+    : activeTime / duration;
   // Only the completed effect's final boundary belongs to the previous iteration.
   const boundary = activeTime === activeDuration && activeDuration !== Infinity && overall > 0 && Number.isInteger(overall);
   let currentIteration;
