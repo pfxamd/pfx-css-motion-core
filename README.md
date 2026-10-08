@@ -4,7 +4,7 @@ A dependency-free, original CSS motion core with pure timing, easing, keyframe n
 
 ## Status
 
-Early foundation (`0.1.0`). Public APIs and schema are provisional until v1.0.0. This is not yet a browser-rendering engine. The CSS compiler exports CSS, but does not apply it to DOM elements.
+Early foundation (`0.1.0`). Public APIs and schema are provisional until v1.0.0. The pure core has no DOM requirement; the optional Browser Adapter uses the browser's native Web Animations API to preview effects.
 
 ## Install and tests
 
@@ -40,6 +40,52 @@ const { css, className, keyframesName } = compileCSS(motion);
 console.log({ css, className, keyframesName });
 ```
 
+## Browser Adapter: native playback and timeline
+
+```js
+import {
+  createMotion, createBrowserAnimation, createBrowserTimeline
+} from "@pfxamd/css-motion-core";
+
+const motion = createMotion({
+  id: "card-entrance",
+  timing: { duration: 600, fill: "both", easing: "ease-out" },
+  keyframes: [
+    { opacity: 0, transform: "translateY(24px)" },
+    { opacity: 1, transform: "translateY(0)" }
+  ]
+});
+
+// Browser-only: call after the target exists in the DOM.
+// Paused by default, ideal for scrubbing a visual editor.
+const controller = createBrowserAnimation(document.querySelector(".card"), motion);
+controller.seek(300);       // milliseconds
+controller.setRate(1.5);
+controller.play();
+controller.pause();
+controller.reverse();
+controller.dispose();       // native animation is canceled; safe to call twice
+
+const first = document.querySelector(".first");
+const second = document.querySelector(".second");
+const sequence = createBrowserTimeline([
+  { element: first, motion },
+  { element: second, motion, at: "after" }
+]);
+sequence.seek(900);          // one shared global time across both effects
+sequence.play();
+sequence.dispose();
+```
+
+- Browser-facing exports: `toBrowserKeyframes`, `toBrowserTiming`, `createBrowserAnimation`, `createBrowserTimeline`.
+- Pure conversion, no DOM access when importing; native `Element.animate()` required at invocation.
+- Supports pause, play, reverse, seek, playback rate, cancellation and idempotent cleanup; native timing includes `endDelay`.
+- Timeline clips may run sequentially, overlap or start at explicit nonnegative times. Every native effect receives the clip offset as an additional delay.
+- No additional runtime dependencies, polling loops, stylesheet injection or parallel animation clocks.
+- Invalid motions and unsupported easing are rejected before creation. Partially constructed groups are canceled if a later native creation fails.
+- Not a full polyfill: property-specific CSS validation, some compositing modes and engine behavior remain browser-dependent. Seeking is in milliseconds and may be outside the effect's active range.
+- The exported CSS compiler remains independent of this native browser adapter.
+
 ## CSS compiler guarantees and boundaries
 
 - Pure function: no DOM access or dependencies; does not mutate the motion.
@@ -63,38 +109,22 @@ src/
   timeline.js    Sequencing and overlapping motion clips
   playback.js    Clock-driven playback state
   compiler.js    CSS keyframes and animation rule generation
+  browser.js     Optional browser adapter and timeline preview
   index.js       Public exports
 test/            Node built-in tests
 ```
 
-## Quality checks and edge-case coverage
+## Verification and release gate
 
-Run `npm test` for the complete regression/stress suite and `npm run check` for syntax and unit tests. Continuous integration is configured for Node.js 20, 22, and 24.
+GitHub Actions executes the unit, edge-case and randomized stress suite on Node.js 20, 22 and 24; native browser conformance runs on Firefox and Playwright WebKit (Linux), plus a separate **real Safari on macOS** job.
 
-Current local validation (Node.js 22, October 2026):
+- The current browser-adapter branch has **95 Node tests**, including 14 new adapter/timeline unit tests (all passed on Node 20/22/24 at the latest checked revision).
+- Adapter integration asserts real rendered opacity, transform, timeline ordering, seek, rate, pause and native cleanup on Firefox, WebKit and native Safari.
+- Core timing is checked against native timing at **21,600 samples per Firefox/WebKit engine**.
+- Native Safari's timing API has **116 documented endpoint discrepancies** (112 wrapping and 4 precision); the expected W3C endpoint semantics and compiled CSS rendering are tested separately. This divergence is reported, never silently corrected or hidden.
+- Details: [cross-browser verification](docs/browser-conformance.md) and [Safari issue #2](https://github.com/pfxamd/pfx-css-motion-core/issues/2).
 
-- 69/69 tests passed; suite passed on 10 consecutive runs.
-- Coverage from `node --test --experimental-test-coverage`: 98.27% total line coverage, 88.67% total branch coverage, 100% total function coverage (these totals **include test files**).
-- Randomized deterministic stress cases: easing, timing, keyframe compilation, timeline sequencing, numeric interpolation, and 25,000 playback ticks.
-- Timing fixes: exact iteration boundaries, negative end delay clipping, finite timestamps, and duration overflow.
-- Scheduling fixes: after-overlap ordering and rejection of unbounded sequential scheduling.
-- Input fixes: sparse keyframe rejection, small numerical values, bounded overflow fallback, monotonic playback clock.
-
-**Before publishing v1.0.0:** verify actual CSS output in Firefox, Chromium, and Safari. Chromium's local headless check could not run in the current execution environment; do not treat the browser-compatibility gate as passed. The compiler is intentionally conservative: it does not validate property-specific CSS grammar in a browser, and unsupported compositions/easings are rejected.
-
-## Browser verification (October 8, 2026)
-
-The deterministic Node.js suite contains **74 tests** after adding regressions discovered through actual browser comparisons.
-
-Chromium 144 headless was launched successfully, and the following checks were performed:
-- **8,424 / 8,424** timing samples matched native `Element.animate()` / `getComputedTiming()` after correcting zero-duration backwards fill and negative `endDelay` cases.
-- **224 / 224** easing samples matched native Chromium behavior.
-- A generated CSS animation was tested at half duration: opacity `0.5` and translateX `50px`.
-- A larger **80,064-sample** timing comparison showed **44 disagreements at exact iteration discontinuities**, attributable to sampling precisely on zero/one boundaries; there were **0 mismatches elsewhere**. These exact-boundary cross-engine differences remain a compatibility concern, not a passed gate.
-- Firefox and WebKit/Safari executables were **unavailable** in the test environment. Do not claim cross-browser certification.
-- GitHub Actions remote run status was not independently verified. The `v1.0.0` release gate therefore remains open.
-
-To reproduce the browser checks without third-party runtime dependencies, serve the repository root over HTTP and navigate to `test/browser-conformance.html` in a browser. The report uses native Web Animations API comparisons.
+**Before tagging v1.0.0**: finish API contract stabilization and licensing, confirm all GitHub Actions jobs are successful on the final candidate, and audit any untested edge behavior. The latest branch results are evidence for this tested scope, not a guarantee about all browser releases.
 
 ## Licensing
 
