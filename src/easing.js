@@ -1,9 +1,11 @@
 // Pure easing functions: input and output are unit progress (overshoot is allowed).
+const checkProgress = x => { if (!Number.isFinite(x)) throw new TypeError("Easing progress must be finite"); };
 export function cubicBezier(x1, y1, x2, y2) {
   if (![x1,y1,x2,y2].every(Number.isFinite) || x1 < 0 || x1 > 1 || x2 < 0 || x2 > 1) throw new RangeError("Invalid bezier control points");
   const polynomial = (a,b,t) => ((1 - 3*b + 3*a)*t + (3*b - 6*a))*t*t + 3*a*t;
   const derivative = (a,b,t) => (3*(1 - 3*b + 3*a)*t + 2*(3*b - 6*a))*t + 3*a;
   return x => {
+    checkProgress(x);
     if (x <= 0) return 0;
     if (x >= 1) return 1;
     let lo=0, hi=1, t=x;
@@ -27,9 +29,10 @@ export function cubicBezier(x1, y1, x2, y2) {
   };
 }
 export function steps(count, position="jump-end") {
-  if (!Number.isInteger(count) || count < 1 || !["jump-start","jump-end","jump-none","jump-both"].includes(position) || position==="jump-none" && count===1)
+  if (!Number.isSafeInteger(count) || count < 1 || !["jump-start","jump-end","jump-none","jump-both"].includes(position) || position==="jump-none" && count===1)
     throw new RangeError("Invalid steps parameters");
   return x => {
+    checkProgress(x);
     if(x<=0) return position==="jump-start" || position==="jump-both" ? 1/(count+(position==="jump-both"?1:0)) : 0;
     if(x>=1) return 1;
     const jumps=count+(position==="jump-both"?1:position==="jump-none"?-1:0);
@@ -38,7 +41,7 @@ export function steps(count, position="jump-end") {
   };
 }
 const NAMED = Object.freeze({
-  linear: x=>x,
+  linear: x=>{ checkProgress(x); return x; },
   ease: cubicBezier(.25,.1,.25,1),
   "ease-in": cubicBezier(.42,0,1,1),
   "ease-out": cubicBezier(0,0,.58,1),
