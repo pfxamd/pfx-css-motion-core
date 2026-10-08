@@ -1,0 +1,22 @@
+name: Safari native conformance
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  safari:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - name: Enable real Safari automation
+        run: sudo safaridriver --enable
+      - name: Test native Safari with WebDriver
+        run: node test/safari-webdriver.mjs
