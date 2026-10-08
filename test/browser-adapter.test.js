@@ -147,3 +147,25 @@ test('browser timeline reverse starts from total end when at zero',()=>{
   assert.equal(group.dispose().playState,'disposed');
   assert.throws(()=>group.play(),/disposed/);
 });
+
+test('timeline clock remains active after an earlier clip finishes',()=>{
+  const first=target(),last=target();
+  const group=createBrowserTimeline([
+    {element:first,motion:make('short',30)},
+    {element:last,motion:make('long',150)}
+  ]);
+  first.recordings[0].finish();
+  assert.equal(group.state.playState,'paused');
+  group.seek(90);
+  assert.equal(group.state.currentTime,90);
+  group.dispose();
+});
+test('timeline autoplay starts each native animation without injected clocks',()=>{
+  const first=target(),second=target();
+  const group=createBrowserTimeline([
+    {element:first,motion:make('a',10)},
+    {element:second,motion:make('b',10)}
+  ],{autoplay:true});
+  assert.deepEqual(group.animations.map(x=>x.playState),['running','running']);
+  group.dispose();
+});
