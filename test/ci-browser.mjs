@@ -36,6 +36,7 @@ try {
     const box = document.createElement("div");
     document.body.append(box);
     let tested = 0;
+    let mismatchCount = 0;
     const differences = [];
     for (const duration of [0,100,800]) {
       for (const iterations of [0,0.5,1,2,2.5]) {
@@ -52,7 +53,8 @@ try {
                   const core=sampleTiming(timing,time).progress;
                   if ((native === null) !== (core === null) ||
                       (native !== null && (!Number.isFinite(core) || Math.abs(native-core) > 0.000001))) {
-                    if (differences.length<20) differences.push({timing,time,native,core});
+                    mismatchCount++;
+                    if (differences.length<30) differences.push({timing,time,native,core});
                   }
                   tested++;
                 }
@@ -85,14 +87,14 @@ try {
     }
     style.remove(); target.remove();
     return {
-      tested,differences, css: {opacity,translateX},
+      tested,mismatchCount,differences, css: {opacity,translateX},
       userAgent:navigator.userAgent,
-      passed: differences.length===0 && Math.abs(opacity-.5)<0.000001 &&
+      passed: mismatchCount===0 && Math.abs(opacity-.5)<0.000001 &&
         Math.abs(translateX-50)<0.000001
     };
   });
   console.log("PFx_BROWSER_RESULT",JSON.stringify({engine:engineName,...report}));
-  assert.equal(report.differences.length,0,"Timing mismatches vs native Web Animations API");
+  assert.equal(report.mismatchCount,0,"Timing mismatches vs native Web Animations API");
   assert.equal(report.passed,true,"CSS playback or timing conformance failed");
 } finally {
   if(browser) await browser.close();
