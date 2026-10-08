@@ -8,6 +8,8 @@ import { sampleTiming, compileCSS, createMotion } from '../src/index.js';
 const failures = [];
 let mismatchCount = 0;
 let knownSafariEndpointDifferenceCount = 0;
+let knownSafariWrapCount = 0;
+let knownSafariEndpointPrecisionCount = 0;
 let unexpectedMismatchCount = 0;
 const unexpectedDifferences = [];
 const mismatchByCategory = {};
@@ -41,10 +43,13 @@ for (const duration of [0,100,800]) {
                 time >= Math.max(0, Math.min(activeEnd, endTime)) &&
                 time >= activeEnd && (core === 0 || core === 1) &&
                 native !== null && Number.isFinite(native) &&
-                Math.abs(core-native) > 0.5 &&
+                (Math.abs(core-native) > 0.5 || Math.abs(core-native) < 0.0001) &&
                 (Math.abs(native) < 0.0001 || Math.abs(native-1) < 0.0001);
-              if (safariFinalBoundary) knownSafariEndpointDifferenceCount++;
-              else {
+              if (safariFinalBoundary) {
+                knownSafariEndpointDifferenceCount++;
+                if (Math.abs(core-native) > 0.5) knownSafariWrapCount++;
+                else knownSafariEndpointPrecisionCount++;
+              } else {
                 unexpectedMismatchCount++;
                 if (unexpectedDifferences.length < 15) unexpectedDifferences.push({timing,time,native,core});
               }
@@ -83,7 +88,7 @@ const finalCSSValid = Math.abs(finalCSS.justAfter - 1)<=1e-7 &&
   Math.abs(finalCSS.wellAfter - 1)<=1e-7;
 const validCSS = midpointCSS && finalCSSValid;
 const report={samples,mismatchCount,knownSafariEndpointDifferenceCount,
-  unexpectedMismatchCount,unexpectedDifferences,mismatchByCategory,failures,
+  knownSafariWrapCount,knownSafariEndpointPrecisionCount,unexpectedMismatchCount,unexpectedDifferences,mismatchByCategory,failures,
   validCSS,midpointCSS,finalCSS,finalCSSValid,
   strictNativeParity:mismatchCount===0,
   passed:mismatchCount===0&&validCSS,
