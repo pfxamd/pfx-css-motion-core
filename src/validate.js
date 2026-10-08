@@ -33,9 +33,10 @@ export function validateMotion(motion) {
     issue("keyframes", "type", "Expected an array");
   } else {
     let previous = -Infinity;
-    motion.keyframes.forEach((frame, i) => {
+    for (let i = 0; i < motion.keyframes.length; i++) {
+      const frame = motion.keyframes[i];
       const path = `keyframes[${i}]`;
-      if (!record(frame)) { issue(path, "type", "Expected a keyframe object"); return; }
+      if (!record(frame)) { issue(path, "type", "Expected a keyframe object"); continue; }
       if (hasOwn(frame, "offset")) {
         if (!finite(frame.offset) || frame.offset < 0 || frame.offset > 1) issue(`${path}.offset`, "range", "Offset must be between 0 and 1");
         else if (frame.offset < previous) issue(`${path}.offset`, "order", "Offsets must be non-decreasing");
@@ -47,7 +48,7 @@ export function validateMotion(motion) {
         if (RESERVED.has(property)) continue;
         if (typeof value !== "string" && !finite(value)) issue(`${path}.${property}`, "type", "Property values must be strings or finite numbers");
       }
-    });
+    }
   }
   return { valid: errors.length === 0, errors };
 }
