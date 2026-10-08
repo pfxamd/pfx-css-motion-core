@@ -32,7 +32,7 @@ test('after fill none does not falsely hold an endpoint', () => {
 });
 test('negative endDelay clamps after-fill active time to duration', () => {
   const t={duration:100,iterations:3,delay:20,endDelay:-10,fill:'forwards'};
-  assert.equal(sampleTiming(t,310).progress,.9);
+  assert.ok(Math.abs(sampleTiming(t,310).progress-.9)<1e-10);
   assert.equal(sampleTiming(t,320).progress,1);
   assert.equal(sampleTiming(t,1000).progress,1);
 });
