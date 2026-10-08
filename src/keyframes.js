@@ -3,6 +3,9 @@
  */
 export function normalizeKeyframes(frames) {
   if (!Array.isArray(frames)) throw new TypeError("Keyframes must be an array");
+  for (let i = 0; i < frames.length; i++) {
+    if (!(i in frames)) throw new TypeError(`Sparse keyframe at index ${i}`);
+  }
   const result = frames.map((frame, index) => {
     if (frame === null || typeof frame !== "object" || Array.isArray(frame)) {
       throw new TypeError(`Invalid keyframe at index ${index}`);
