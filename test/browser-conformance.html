@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PFx CSS Motion Core browser conformance</title></head>
+<body>
+<pre id="results">Running...</pre>
+<script type="module">
+import { sampleTiming, compileCSS, createMotion } from '../src/index.js';
+const failures = [];
+let samples = 0;
+const box = document.createElement('div');
+document.body.append(box);
+for (const duration of [0,100,800]) {
+  for (const iterations of [0,.5,1,2,2.5,3]) {
+    for (const direction of ['normal','reverse','alternate','alternate-reverse']) {
+      for (const delay of [0,20,-50]) {
+        for (const endDelay of [0,-20,20]) {
+          const timing = {duration,iterations,direction,delay,endDelay,fill:'both'};
+          const animation = box.animate([{opacity:0},{opacity:1}],{...timing,easing:'linear'});
+          animation.pause();
+          const endTime = Math.max(0,delay+duration*iterations+endDelay);
+          for(const time of [0,1,50,99,100,100.001,200,400,800,801,1600,2400,endTime]){
+            animation.currentTime = time;
+            const native = animation.effect.getComputedTiming().progress;
+            const core = sampleTiming(timing,time).progress;
+            if ((native === null) !== (core === null) ||
+                (native !== null && Math.abs(native-core)>1e-7)) {
+              if(failures.length < 20) failures.push({timing,time,native,core});
+            }
+            samples++;
+          }
+          animation.cancel();
+        }
+      }
+    }
+  }
+}
+box.remove();
+const result = compileCSS(createMotion({
+  id:'browser-check',timing:{duration:1000,fill:'both'},
+  keyframes:[{opacity:0,transform:'translateX(0px)'},{opacity:1,transform:'translateX(100px)'}]
+}));
+const style = document.createElement('style');style.textContent = result.css;document.head.append(style);
+const element = document.createElement('div');element.className=result.className;document.body.append(element);
+const animation = element.getAnimations()[0];
+if(animation){animation.pause();animation.currentTime=500;}
+const computed = getComputedStyle(element);
+const validCSS = !!animation && Math.abs(Number(computed.opacity)-.5)<=1e-7 &&
+  Math.abs(new DOMMatrixReadOnly(computed.transform).m41-50)<=1e-7;
+const report={samples,failures,validCSS,passed:failures.length===0&&validCSS,browser:navigator.userAgent};
+document.getElementById('results').textContent=JSON.stringify(report,null,2);
+document.title = report.passed ? 'PASS — PFx browser conformance' : 'FAIL — PFx browser conformance';
+window.pfxConformanceResult = report;
+</script></body></html>
