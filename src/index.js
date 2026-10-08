@@ -6,3 +6,4 @@ export { normalizeKeyframes } from "./keyframes.js";
 export { parseNumeric, parseColor, interpolateValue, interpolateProperties } from "./properties.js";
 export { createTimeline, sampleTimeline } from "./timeline.js";
 export { createPlayback } from "./playback.js";
+export { compileCSS, CSSCompileError } from './compiler.js';
