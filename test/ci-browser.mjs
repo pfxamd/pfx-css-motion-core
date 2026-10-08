@@ -96,6 +96,11 @@ try {
   console.log("PFx_BROWSER_RESULT",JSON.stringify({engine:engineName,...report}));
   assert.equal(report.mismatchCount,0,"Timing mismatches vs native Web Animations API");
   assert.equal(report.passed,true,"CSS playback or timing conformance failed");
+  await page.goto("http://127.0.0.1:" + server.address().port + "/test/adapter-conformance.html");
+  await page.waitForFunction(() => !!window.pfxAdapterResult, {timeout:15000});
+  const adapterReport=await page.evaluate(() => window.pfxAdapterResult);
+  console.log("PFx_ADAPTER_RESULT",JSON.stringify({engine:engineName,...adapterReport}));
+  assert.equal(adapterReport.passed,true,"Native adapter DOM/playback conformance failed");
 } finally {
   if(browser) await browser.close();
   await new Promise(done => server.close(done));

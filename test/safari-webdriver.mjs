@@ -70,6 +70,20 @@ try{
   }
   assert.equal(report.specCompatibleWithDocumentedSafariDeviation,true,
     "Core has unexpected Safari discrepancies or generated CSS renders incorrectly");
+  await webdriver("POST","/session/"+sessionId+"/url",{
+    url:"http://127.0.0.1:"+http.address().port+"/test/adapter-conformance.html"
+  });
+  let adapterReport=null;
+  for(let tries=0;tries<60;tries++) {
+    adapterReport=await webdriver("POST","/session/"+sessionId+"/execute/sync",{
+      script:"return window.pfxAdapterResult || null;",args:[]
+    });
+    if(adapterReport)break;
+    await sleep(500);
+  }
+  if(!adapterReport)throw new Error("Safari native adapter report unavailable");
+  console.log("PFx_ADAPTER_RESULT",JSON.stringify({engine:"safari",...adapterReport}));
+  assert.equal(adapterReport.passed,true,"Native Safari adapter DOM/playback conformance failed");
 } finally {
   if(sessionId){try{await webdriver("DELETE","/session/"+sessionId);}catch{}}
   if(driver){driver.kill("SIGTERM");}

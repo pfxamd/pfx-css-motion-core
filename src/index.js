@@ -7,3 +7,4 @@ export { parseNumeric, parseColor, interpolateValue, interpolateProperties } fro
 export { createTimeline, sampleTimeline } from "./timeline.js";
 export { createPlayback } from "./playback.js";
 export { compileCSS, CSSCompileError } from './compiler.js';
+export { toBrowserKeyframes, toBrowserTiming, createBrowserAnimation, createBrowserTimeline } from './browser.js';
