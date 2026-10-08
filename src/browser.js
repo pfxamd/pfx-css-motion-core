@@ -146,13 +146,15 @@ export function createBrowserTimeline(entries, options = {}) {
     throw error;
   }
   let disposed = false;
+  // The clip that ends last remains the timeline clock after earlier clips finish.
+  const masterIndex = timeline.clips.findIndex(clip => clip.end === timeline.duration);
   const assertAlive = () => {
     if (disposed) throw new Error('Browser timeline has been disposed');
   };
   const state = () => Object.freeze({
-    playState: disposed ? 'disposed' : controllers[0].state.playState,
-    currentTime: controllers[0].state.currentTime,
-    playbackRate: controllers[0].state.playbackRate,
+    playState: disposed ? 'disposed' : controllers[masterIndex].state.playState,
+    currentTime: controllers[masterIndex].state.currentTime,
+    playbackRate: controllers[masterIndex].state.playbackRate,
     duration: timeline.duration,
     disposed
   });
