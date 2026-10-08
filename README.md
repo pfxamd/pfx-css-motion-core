@@ -4,7 +4,7 @@ A dependency-free, original CSS motion core with pure timing, easing, keyframe n
 
 ## Status
 
-Early foundation (`0.1.0`). Public APIs and schema are provisional until v1.0.0. This is not yet a browser-rendering engine.
+Early foundation (`0.1.0`). Public APIs and schema are provisional until v1.0.0. This is not yet a browser-rendering engine. The CSS compiler exports CSS, but does not apply it to DOM elements.
 
 ## Install and tests
 
@@ -66,6 +66,21 @@ src/
   index.js       Public exports
 test/            Node built-in tests
 ```
+
+## Quality checks and edge-case coverage
+
+Run `npm test` for the complete regression/stress suite and `npm run check` for syntax and unit tests. Continuous integration is configured for Node.js 20, 22, and 24.
+
+Current local validation (Node.js 22, October 2026):
+
+- 69/69 tests passed; suite passed on 10 consecutive runs.
+- Coverage from `node --test --experimental-test-coverage`: 98.27% total line coverage, 88.67% total branch coverage, 100% total function coverage (these totals **include test files**).
+- Randomized deterministic stress cases: easing, timing, keyframe compilation, timeline sequencing, numeric interpolation, and 25,000 playback ticks.
+- Timing fixes: exact iteration boundaries, negative end delay clipping, finite timestamps, and duration overflow.
+- Scheduling fixes: after-overlap ordering and rejection of unbounded sequential scheduling.
+- Input fixes: sparse keyframe rejection, small numerical values, bounded overflow fallback, monotonic playback clock.
+
+**Before publishing v1.0.0:** verify actual CSS output in Firefox, Chromium, and Safari. Chromium's local headless check could not run in the current execution environment; do not treat the browser-compatibility gate as passed. The compiler is intentionally conservative: it does not validate property-specific CSS grammar in a browser, and unsupported compositions/easings are rejected.
 
 ## Licensing
 
