@@ -16,7 +16,7 @@ export function sampleTiming(timing, localTime) {
   const phase = localTime < beforeBoundary ? "before" : localTime < afterBoundary ? "active" : "after";
   const fills = phase === "before" ? fill === "backwards" || fill === "both" : phase === "after" ? fill === "forwards" || fill === "both" : true;
   if (!fills) return { phase, progress: null, currentIteration: null, activeDuration, endTime };
-  const activeTime = phase === "before" ? 0
+  const activeTime = phase === "before" ? Math.max(localTime - delay, 0)
     : Math.max(0, Math.min(localTime - delay, activeDuration));
   const overall = duration === 0 ? (phase === "before" ? 0 : iterations)
     : activeTime / duration;
@@ -27,7 +27,7 @@ export function sampleTiming(timing, localTime) {
   if (overall === Infinity) {
     currentIteration = 0;
     simpleProgress = 1;
-  } else if (iterations === 0) {
+  } else if (iterations === 0 && activeTime === 0) {
     currentIteration = 0;
     simpleProgress = 0;
   } else {
