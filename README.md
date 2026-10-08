@@ -82,6 +82,20 @@ Current local validation (Node.js 22, October 2026):
 
 **Before publishing v1.0.0:** verify actual CSS output in Firefox, Chromium, and Safari. Chromium's local headless check could not run in the current execution environment; do not treat the browser-compatibility gate as passed. The compiler is intentionally conservative: it does not validate property-specific CSS grammar in a browser, and unsupported compositions/easings are rejected.
 
+## Browser verification (October 8, 2026)
+
+The deterministic Node.js suite contains **74 tests** after adding regressions discovered through actual browser comparisons.
+
+Chromium 144 headless was launched successfully, and the following checks were performed:
+- **8,424 / 8,424** timing samples matched native `Element.animate()` / `getComputedTiming()` after correcting zero-duration backwards fill and negative `endDelay` cases.
+- **224 / 224** easing samples matched native Chromium behavior.
+- A generated CSS animation was tested at half duration: opacity `0.5` and translateX `50px`.
+- A larger **80,064-sample** timing comparison showed **44 disagreements at exact iteration discontinuities**, attributable to sampling precisely on zero/one boundaries; there were **0 mismatches elsewhere**. These exact-boundary cross-engine differences remain a compatibility concern, not a passed gate.
+- Firefox and WebKit/Safari executables were **unavailable** in the test environment. Do not claim cross-browser certification.
+- GitHub Actions remote run status was not independently verified. The `v1.0.0` release gate therefore remains open.
+
+To reproduce the browser checks without third-party runtime dependencies, serve the repository root over HTTP and navigate to `test/browser-conformance.html` in a browser. The report uses native Web Animations API comparisons.
+
 ## Licensing
 
 The repository currently declares `UNLICENSED`. No reuse or redistribution rights are granted until a license is explicitly chosen.
