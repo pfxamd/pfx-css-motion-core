@@ -7,6 +7,9 @@
 import { sampleTiming, compileCSS, createMotion } from '../src/index.js';
 const failures = [];
 let mismatchCount = 0;
+let knownSafariEndpointDifferenceCount = 0;
+let unexpectedMismatchCount = 0;
+const unexpectedDifferences = [];
 const mismatchByCategory = {};
 let samples = 0;
 const box = document.createElement('div');
@@ -27,6 +30,21 @@ for (const duration of [0,100,800]) {
             if ((native === null) !== (core === null) ||
                 (native !== null && Math.abs(native-core)>1e-7)) {
               mismatchCount++;
+              // W3C Web Animations 4.8.3.3: a completed integer iteration with
+              // forwards fill must retain its final endpoint, not wrap to 0.
+              // Safari 26.6.1 sometimes reports un-clamped modulo progress there.
+              const activeEnd = delay + duration * iterations;
+              const endTime = Math.max(0, activeEnd + endDelay);
+              const safariFinalBoundary = /Safari\//.test(navigator.userAgent) &&
+                !/Chrome\//.test(navigator.userAgent) &&
+                Number.isInteger(iterations) && iterations > 0 && duration > 0 &&
+                time >= endTime && time >= activeEnd && (core === 0 || core === 1) &&
+                native !== null && Number.isFinite(native);
+              if (safariFinalBoundary) knownSafariEndpointDifferenceCount++;
+              else {
+                unexpectedMismatchCount++;
+                if (unexpectedDifferences.length < 15) unexpectedDifferences.push({timing,time,native,core});
+              }
               const category = 'duration=' + duration + ';iterations=' + iterations + ';delay=' + delay + ';time=' + time;
               mismatchByCategory[category] = (mismatchByCategory[category] || 0) + 1;
               if(failures.length < 30) failures.push({timing,time,native,core});
@@ -49,9 +67,25 @@ const element = document.createElement('div');element.className=result.className
 const animation = element.getAnimations()[0];
 if(animation){animation.pause();animation.currentTime=500;}
 const computed = getComputedStyle(element);
-const validCSS = !!animation && Math.abs(Number(computed.opacity)-.5)<=1e-7 &&
+const midpointCSS = !!animation && Math.abs(Number(computed.opacity)-.5)<=1e-7 &&
   Math.abs(new DOMMatrixReadOnly(computed.transform).m41-50)<=1e-7;
-const report={samples,mismatchCount,mismatchByCategory,failures,validCSS,passed:mismatchCount===0&&validCSS,browser:navigator.userAgent};
+const finalCSS = {};
+if (animation) {
+  animation.currentTime=1000.001;
+  finalCSS.justAfter = Number(getComputedStyle(element).opacity);
+  animation.currentTime=3000;
+  finalCSS.wellAfter = Number(getComputedStyle(element).opacity);
+}
+const finalCSSValid = Math.abs(finalCSS.justAfter - 1)<=1e-7 &&
+  Math.abs(finalCSS.wellAfter - 1)<=1e-7;
+const validCSS = midpointCSS && finalCSSValid;
+const report={samples,mismatchCount,knownSafariEndpointDifferenceCount,
+  unexpectedMismatchCount,unexpectedDifferences,mismatchByCategory,failures,
+  validCSS,midpointCSS,finalCSS,finalCSSValid,
+  strictNativeParity:mismatchCount===0,
+  passed:mismatchCount===0&&validCSS,
+  specCompatibleWithDocumentedSafariDeviation:unexpectedMismatchCount===0&&validCSS,
+  browser:navigator.userAgent};
 document.getElementById('results').textContent=JSON.stringify(report,null,2);
 document.title = report.passed ? 'PASS — PFx browser conformance' : 'FAIL — PFx browser conformance';
 window.pfxConformanceResult = report;
