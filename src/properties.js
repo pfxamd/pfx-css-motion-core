@@ -5,6 +5,20 @@ const HEX = /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i;
 const RGB = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i;
 const clamp = (x, lo, hi) => Math.min(hi, Math.max(lo, x));
 const trim = value => String(Number(value.toFixed(9)));
+function cssDecimal(value) {
+  const text = String(value);
+  if (!/[eE]/.test(text)) return text;
+  const [mantissa, rawExponent] = text.toLowerCase().split('e');
+  const exponent = Number(rawExponent);
+  const sign = mantissa.startsWith('-') ? '-' : '';
+  const unsigned = sign ? mantissa.slice(1) : mantissa;
+  const dot = unsigned.indexOf('.');
+  const digits = unsigned.replace('.', '');
+  const shift = (dot < 0 ? unsigned.length : dot) + exponent;
+  if (shift <= 0) return sign + '0.' + '0'.repeat(-shift) + digits;
+  if (shift >= digits.length) return sign + digits + '0'.repeat(shift - digits.length);
+  return sign + digits.slice(0, shift) + '.' + digits.slice(shift);
+}
 const channel = n => clamp(Math.round(n), 0, 255);
 export function parseNumeric(value) {
   if (typeof value === "number") return Number.isFinite(value) ? { value, unit: "" } : null;
@@ -41,8 +55,10 @@ export function interpolateValue(from, to, progress) {
   if (progress >= 1) return to;
   const a = parseNumeric(from), b = parseNumeric(to);
   if (a && b && a.unit === b.unit) {
-    const result = a.value + (b.value - a.value) * progress;
-    return typeof from === "number" && typeof to === "number" ? result : trim(result) + a.unit;
+    let result = a.value + (b.value - a.value) * progress;
+    if (!Number.isFinite(result)) result = a.value * (1 - progress) + b.value * progress;
+    if (!Number.isFinite(result)) throw new RangeError('Numeric interpolation overflow');
+    return typeof from === "number" && typeof to === "number" ? result : cssDecimal(result) + a.unit;
   }
   const c = parseColor(from), d = parseColor(to);
   if (c && d) {
