@@ -55,11 +55,13 @@ try{
   assert.equal(report.validCSS,true,"Safari fails generated CSS at midpoint or after completion");
   assert.equal(report.unexpectedMismatchCount,0,"Undocumented Safari native timing mismatches");
   assert.equal(report.mismatchCount,
-    report.knownSafariEndpointDifferenceCount + report.unexpectedMismatchCount,
+    report.knownSafariWrapCount + report.knownSafariEndpointPrecisionCount + report.unexpectedMismatchCount,
     "Mismatch accounting must include every native discrepancy");
   if(report.knownSafariEndpointDifferenceCount > 0) {
     console.warn("KNOWN_SAFARI_NATIVE_NONCONFORMANCE",JSON.stringify({
       count:report.knownSafariEndpointDifferenceCount,
+      wrappedEndpoint:report.knownSafariWrapCount,
+      endpointPrecision:report.knownSafariEndpointPrecisionCount,
       samples:report.samples,
       strictNativeParity:report.strictNativeParity,
       source:"https://www.w3.org/TR/web-animations-1/#calculating-the-simple-iteration-progress",
