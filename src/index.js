@@ -5,3 +5,4 @@ export { cubicBezier, steps, parseEasing } from "./easing.js";
 export { normalizeKeyframes } from "./keyframes.js";
 export { parseNumeric, parseColor, interpolateValue, interpolateProperties } from "./properties.js";
 export { createTimeline, sampleTimeline } from "./timeline.js";
+export { createPlayback } from "./playback.js";
