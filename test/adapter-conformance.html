@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PFx Browser Adapter conformance</title></head>
+<body>
+<pre id="results">Running native animation checks...</pre>
+<script type="module">
+import { createMotion, createBrowserAnimation, createBrowserTimeline } from '../src/index.js';
+
+const checks = {};
+const errors = [];
+const near = (actual, expected, label, tolerance=0.015) => {
+  const okay = Number.isFinite(actual) && Math.abs(actual-expected)<=tolerance;
+  checks[label] = {actual,expected,okay};
+  if(!okay)errors.push(label+' expected '+expected+' got '+actual);
+};
+const motion = (id,duration=1000) => createMotion({
+  id, timing:{duration,fill:'both',easing:'linear'},
+  keyframes:[{opacity:0,transform:'translateX(0px)'},{opacity:1,transform:'translateX(100px)'}]
+});
+const node = () => {const element=document.createElement('div');document.body.append(element);return element;};
+const opacity = element => Number(getComputedStyle(element).opacity);
+const translateX = element => new DOMMatrixReadOnly(getComputedStyle(element).transform).m41;
+try {
+  const element=node();
+  const controller=createBrowserAnimation(element,motion('single'));
+  checks.pausedByDefault = controller.animation.playState==='paused';
+  if(!checks.pausedByDefault)errors.push('Default playback not paused');
+  controller.seek(500);
+  near(opacity(element),.5,'single-opacity-50');
+  near(translateX(element),50,'single-transform-50');
+  controller.setRate(2);
+  checks.rateIs2=controller.animation.playbackRate===2;
+  if(!checks.rateIs2)errors.push('Native rate not set');
+  controller.pause();
+  controller.seek(750);
+  near(opacity(element),.75,'single-opacity-75');
+  controller.dispose();
+  checks.disposed = controller.state.disposed && controller.animation.playState==='idle';
+  if(!checks.disposed)errors.push('Disposal did not cancel native animation');
+  element.remove();
+
+  const first=node(),second=node();
+  const group=createBrowserTimeline([
+    {element:first,motion:motion('first',100)},
+    {element:second,motion:motion('second',100)}
+  ]);
+  checks.timelineDuration=group.state.duration===200;
+  if(!checks.timelineDuration)errors.push('Timeline duration not 200');
+  group.seek(50);
+  near(opacity(first),.5,'timeline-first-at-50');
+  near(opacity(second),0,'timeline-second-at-50');
+  group.seek(150);
+  near(opacity(first),1,'timeline-first-at-150');
+  near(opacity(second),.5,'timeline-second-at-150');
+  group.seek(200);
+  near(opacity(second),1,'timeline-second-at-200');
+  group.setRate(1.5);
+  checks.timelineRate=group.animations.every(animation=>animation.playbackRate===1.5);
+  if(!checks.timelineRate)errors.push('Timeline rates differ');
+  group.dispose();
+  checks.timelineDisposed=group.animations.every(animation=>animation.playState==='idle');
+  if(!checks.timelineDisposed)errors.push('Timeline native animations not cancelled');
+  first.remove();second.remove();
+} catch(error) {
+  errors.push(error?.stack||String(error));
+}
+const result={passed:errors.length===0,errors,checks,browser:navigator.userAgent};
+window.pfxAdapterResult=result;
+document.getElementById('results').textContent=JSON.stringify(result,null,2);
+document.title=result.passed?'PASS — Native Browser Adapter':'FAIL — Native Browser Adapter';
+</script>
+</body></html>
