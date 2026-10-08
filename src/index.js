@@ -3,3 +3,4 @@ export { validateMotion, assertValidMotion } from "./validate.js";
 export { sampleTiming } from "./timing.js";
 export { cubicBezier, steps, parseEasing } from "./easing.js";
 export { normalizeKeyframes } from "./keyframes.js";
+export { parseNumeric, parseColor, interpolateValue, interpolateProperties } from "./properties.js";
