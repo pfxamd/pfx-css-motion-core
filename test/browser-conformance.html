@@ -40,7 +40,9 @@ for (const duration of [0,100,800]) {
                 Number.isInteger(iterations) && iterations > 0 && duration > 0 &&
                 time >= Math.max(0, Math.min(activeEnd, endTime)) &&
                 time >= activeEnd && (core === 0 || core === 1) &&
-                native !== null && Number.isFinite(native);
+                native !== null && Number.isFinite(native) &&
+                Math.abs(core-native) > 0.5 &&
+                (Math.abs(native) < 0.0001 || Math.abs(native-1) < 0.0001);
               if (safariFinalBoundary) knownSafariEndpointDifferenceCount++;
               else {
                 unexpectedMismatchCount++;
