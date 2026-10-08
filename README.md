@@ -4,14 +4,14 @@ A dependency-free, original CSS motion core with pure timing, easing, keyframe n
 
 ## Status
 
-Early foundation (`0.1.0`). Public APIs and schema are provisional until v1.0.0. The pure core has no DOM requirement; the optional Browser Adapter uses the browser's native Web Animations API to preview effects.
+Stable v1.0.0 API candidate. Motion schema v1 and all 23 public exports are covered by a compatibility test. The pure core has no DOM requirement; the optional Browser Adapter uses native Web Animations API for preview.
 
 ## Install and tests
 
-Node.js 20+ for tests; no runtime dependencies.
+Node.js 20+; no runtime dependencies. GitHub Releases ship the versioned source archive. No automatic npm-registry publication.
 
 ```sh
-npm test
+npm run release:check
 ```
 
 ## Compile an animation
@@ -86,6 +86,8 @@ sequence.dispose();
 - Not a full polyfill: property-specific CSS validation, some compositing modes and engine behavior remain browser-dependent. Seeking is in milliseconds and may be outside the effect's active range.
 - The exported CSS compiler remains independent of this native browser adapter.
 
+For the full stable contract, see [v1 API documentation](docs/API-v1.md).
+
 ## CSS compiler guarantees and boundaries
 
 - Pure function: no DOM access or dependencies; does not mutate the motion.
@@ -118,14 +120,14 @@ test/            Node built-in tests
 
 GitHub Actions executes the unit, edge-case and randomized stress suite on Node.js 20, 22 and 24; native browser conformance runs on Firefox and Playwright WebKit (Linux), plus a separate **real Safari on macOS** job.
 
-- The current browser-adapter branch has **95 Node tests**, including 14 new adapter/timeline unit tests (all passed on Node 20/22/24 at the latest checked revision).
+- The release candidate adds public-API compatibility and package integrity checks to the existing browser-adapter tests. The exact totals are recorded by CI.
 - Adapter integration asserts real rendered opacity, transform, timeline ordering, seek, rate, pause and native cleanup on Firefox, WebKit and native Safari.
 - Core timing is checked against native timing at **21,600 samples per Firefox/WebKit engine**.
 - Native Safari's timing API has **116 documented endpoint discrepancies** (112 wrapping and 4 precision); the expected W3C endpoint semantics and compiled CSS rendering are tested separately. This divergence is reported, never silently corrected or hidden.
 - Details: [cross-browser verification](docs/browser-conformance.md) and [Safari issue #2](https://github.com/pfxamd/pfx-css-motion-core/issues/2).
 
-**Before tagging v1.0.0**: finish API contract stabilization and licensing, confirm all GitHub Actions jobs are successful on the final candidate, and audit any untested edge behavior. The latest branch results are evidence for this tested scope, not a guarantee about all browser releases.
+**Release gate:** the release workflow must pass package checks, native browser conformance and the unit/stress suite before creating the GitHub Release and `v1.0.0` tag. The known Safari native endpoint discrepancy remains explicitly reported.
 
 ## Licensing
 
-The repository currently declares `UNLICENSED`. No reuse or redistribution rights are granted until a license is explicitly chosen.
+Apache License 2.0 — Copyright 2026 PFxamd. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
