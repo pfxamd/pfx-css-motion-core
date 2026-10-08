@@ -36,3 +36,10 @@ test('CSS jump-both easing uses the expected step thresholds', () => {
   assert.equal(eased(0.5), 0.6);
   assert.equal(eased(1), 1);
 });
+
+test('negative delay with zero iterations retains before-fill sampling progress', () => {
+  const timing = { duration:100, delay:-50, iterations:0, fill:'both', direction:'normal' };
+  assert.equal(sampleTiming(timing,-1).progress, .49);
+  assert.equal(sampleTiming({...timing,direction:'reverse'},-1).progress, .51);
+  assert.equal(sampleTiming(timing,0).progress,0);
+});

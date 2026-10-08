@@ -1,0 +1,26 @@
+name: Browser conformance
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engines:
+    name: ${{ matrix.browser }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run check
+      - run: npm install --no-save --package-lock=false playwright
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: node test/ci-browser.mjs ${{ matrix.browser }}
